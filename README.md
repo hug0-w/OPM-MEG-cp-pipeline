@@ -4,6 +4,8 @@
 
 ![Python](https://img.shields.io/badge/python-%E2%89%A53.10-blue)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
+[![Project page](https://img.shields.io/badge/project-page-2b6cb0)](https://hug0-w.github.io/OPM-MEG-cp-pipeline/)
+[![Paper](https://img.shields.io/badge/bioRxiv-2026.11.20.766579-b31b1b)](https://doi.org/10.64898/2026.11.20.766579)
 
 <img width="1392" height="1686" alt="Example output of the pipeline" src="https://github.com/user-attachments/assets/31177f7a-e2a2-498c-a4a9-3559a575f6e7" />
 
@@ -40,8 +42,8 @@ The full rationale for each choice is in [`docs/pipeline.md`](docs/pipeline.md).
 ## Installation
 
 ```bash
-git clone https://github.com/hug0-w/opm-cp-pipeline.git
-cd opm-cp-pipeline
+git clone https://github.com/hug0-w/OPM-MEG-cp-pipeline.git
+cd OPM-MEG-cp-pipeline
 pip install -e ".[all]"
 ```
 
@@ -143,7 +145,7 @@ atlas/              instructions for obtaining AAL2
 
 ## Licence
 
-MIT. The AAL2 atlas is not included and carries its own terms.
+MIT, see [`LICENSE`](LICENSE). The AAL2 atlas is not included and carries its own terms.
 
 ---
 

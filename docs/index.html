@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tensor decomposition for OP-MEG</title>
+  <meta name="description" content="Non-negative tensor decomposition of source-reconstructed OP-MEG recovers motor beta and visual alpha responses without choosing a region, frequency band or latency.">
+  <meta name="color-scheme" content="light dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Tensor decomposition for data-driven analysis of OP-MEG: a feasibility study">
+  <meta property="og:description" content="Unsupervised region × frequency × time decomposition of source-reconstructed OP-MEG. Preprint, code and figures.">
+  <meta property="og:url" content="https://hug0-w.github.io/OPM-MEG-cp-pipeline/">
+  <meta property="og:image" content="https://hug0-w.github.io/OPM-MEG-cp-pipeline/assets/img/social-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 11l10-5 10 5v11l-10 5-10-5z' fill='%232b6cb0'/%3E%3Cpath d='M16 16l10-5M16 16v11M16 16L6 11' stroke='%23fff' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/katex/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="assets/katex/katex.min.js"></script>
+  <script defer src="assets/katex/contrib/auto-render.min.js"></script>
+  <script defer src="main.js"></script>
+</head>
+<body>
+
+<nav class="topnav" id="topnav" aria-label="Sections">
+  <div class="topnav-inner">
+    <a class="topnav-title" href="#top">OP-MEG tensor decomposition</a>
+    <div class="topnav-links">
+      <a href="#idea">Idea</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#code">Code</a>
+      <a href="#cite">Cite</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">bioRxiv preprint · 2026</p>
+    <h1>Tensor decomposition for data-driven analysis of OP-MEG: a feasibility study</h1>
+
+    <ul class="authors">
+      <li>Hugo Wharton<sup>1,2,†</sup></li>
+      <li>Arjun Ramaswamy<sup>3,4,†</sup></li>
+      <li>Stephanie Mellor<sup>7</sup></li>
+      <li>Sahitya Puvvada<sup>3</sup></li>
+      <li>Matthew Walker<sup>4,5</sup></li>
+      <li>Daniel Bush<sup>6</sup></li>
+      <li>Tim Tierney<sup>3</sup></li>
+      <li>Umesh Vivekananda<sup>4,5,6,*</sup></li>
+      <li>Mehrnoosh Sadrzadeh<sup>2,*</sup></li>
+    </ul>
+
+    <ol class="affils">
+      <li><sup>1</sup>Department of Physics &amp; Astronomy, UCL</li>
+      <li><sup>2</sup>Quantum Learning Labs, Department of Computer Science, UCL</li>
+      <li><sup>3</sup>Department of Imaging Neuroscience, UCL Queen Square Institute of Neurology</li>
+      <li><sup>4</sup>Research Department of Epilepsy, UCL Queen Square Institute of Neurology</li>
+      <li><sup>5</sup>National Hospital for Neurology and Neurosurgery, UCLH NHS Foundation Trust</li>
+      <li><sup>6</sup>Institute of Cognitive Neuroscience, UCL</li>
+      <li><sup>7</sup>Translational Neuromodeling Unit, University of Zurich &amp; ETH Zurich</li>
+    </ol>
+    <p class="notes"><sup>†</sup>Equal contribution &nbsp;·&nbsp; <sup>*</sup>Corresponding authors</p>
+
+    <div class="buttons">
+      <a class="btn btn-primary" href="https://doi.org/10.64898/2026.11.20.766579">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Paper
+      </a>
+      <a class="btn" href="assets/paper.pdf">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        PDF
+      </a>
+      <a class="btn" href="https://github.com/hug0-w/OPM-MEG-cp-pipeline">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+        Code
+      </a>
+      <a class="btn" href="#cite">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h4v4c0 3-2 5-4 6M15 7h4v4c0 3-2 5-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cite
+      </a>
+    </div>
+
+    <p class="tldr">
+      Non-negative tensor decomposition of source-reconstructed OP-MEG recovers motor beta and visual alpha
+      responses <strong>without choosing a region, frequency band or latency in advance</strong>.
+    </p>
+  </div>
+</header>
+
+<main>
+
+  <section class="wrap wide teaser">
+    <figure class="fig zoomable">
+      <img src="assets/img/fig1.webp" width="2400" height="856" alt="Pipeline overview: (A) OP-MEG sensor data and MRI are source reconstructed with an LCMV beamformer; (B) region by frequency by time tensors are built per participant; (C) each tensor is approximated by a sum of rank-one components; (D) permutation null tests check for task-locked structure; (E) components are matched across participants by clustering on a product of spatial, spectral and temporal similarity.">
+      <figcaption><b>Pipeline overview.</b> Participant-specific OP-MEG recordings are beamformed onto a common cortical parcellation, turned into region × frequency × time tensors, decomposed with non-negative CPD, tested against a permutation null, and matched across participants by constrained consensus clustering.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap stats" aria-label="At a glance">
+    <div class="stat"><span class="num">3</span><span class="lbl">participants with epilepsy, each in a bespoke 3D-printed helmet</span></div>
+    <div class="stat"><span class="num">70 × 67 × 1.2&nbsp;s</span><span class="lbl">cortical regions × frequencies (4–70&nbsp;Hz) × time around each choice</span></div>
+    <div class="stat"><span class="num">5 / 6</span><span class="lbl">ERD/ERS tensors with significant task-locked low-rank structure</span></div>
+    <div class="stat"><span class="num">No GPU</span><span class="lbl">the whole pipeline, including 500-run permutation tests, ran on a laptop</span></div>
+  </section>
+
+  <section class="wrap" id="abstract">
+    <h2>Abstract</h2>
+    <p>
+      Optically Pumped Magnetometer magnetoencephalography (OP-MEG) enables flexible, close-to-scalp recordings unlocking
+      access to new patient cohorts and naturalistic paradigms. The data collected during OP-MEG sessions is naturally
+      multi-dimensional, often containing information across patients, trials, conditions, space, frequency and time which
+      can be stored in tensors. Canonical polyadic decomposition (CPD) is an unsupervised method that separates
+      multidimensional data into components with linked spatial, spectral and temporal profiles. This allows neural
+      responses to be characterised across brain regions, frequency and time simultaneously, without specifying these
+      features in advance. This makes CPD well suited to OP-MEG data, where signals naturally vary across these dimensions.
+    </p>
+    <p>
+      Here, we applied CPD to whole-brain, source-reconstructed OP-MEG data from three participants with epilepsy during a
+      simple visuomotor task, modelling neural activity jointly across brain regions, frequency and time. We split these
+      subject-specific tensors into event-related power decrease and increase (referred to as ERD and ERS for convenience)
+      tensors so that a more interpretable and computationally efficient non-negative CPD variant could be applied. CPD
+      paired with consensus clustering on spatio-spectral-temporal networks successfully identified cross-patient,
+      simultaneous motor beta and visual alpha suppression. Permutation-based null distribution tests were used to exclude
+      tensors that lacked significant low-rank structure. These findings demonstrate the applicability of tensor
+      decompositions to electrophysiological data as the pipeline recovers canonical visuomotor responses without
+      prespecifying region, band or latency.
+    </p>
+  </section>
+
+  <section class="wrap" id="idea">
+    <h2>Why tensors?</h2>
+    <div class="split">
+      <div>
+        <p>
+          Conventional M/EEG analyses fix the region, frequency band and latency of interest in advance. That works when
+          you already know what you are looking for, which is rarely the case in exploratory, naturalistic or clinical work.
+        </p>
+        <p>
+          Matrix methods such as PCA or HMMs avoid that choice, but they need the data flattened first, so region,
+          frequency and time are mixed together before the model ever sees them. <strong>Canonical polyadic decomposition</strong>
+          keeps the three dimensions separate and estimates them jointly. Each component is one pattern described by
+          <em>where</em> it happens, <em>at what frequency</em>, and <em>when</em>:
+        </p>
+        <div class="eq">$$\mathcal{X} \;\approx\; \sum_{r=1}^{R} \lambda_r\, \mathbf{a}_r \circ \mathbf{b}_r \circ \mathbf{c}_r$$</div>
+        <div class="modes">
+          <span class="mode"><b>$\mathbf{a}_r$</b> where: loading on each of 70 cortical regions</span>
+          <span class="mode"><b>$\mathbf{b}_r$</b> what frequency: spectral profile, 4–70 Hz</span>
+          <span class="mode"><b>$\mathbf{c}_r$</b> when: time course around the button press</span>
+        </div>
+        <p>
+          Under established conditions CPD is essentially unique up to order and scale, so each component keeps a consistent
+          spatial, spectral and temporal interpretation that can be compared across participants.
+        </p>
+      </div>
+      <figure class="fig zoomable">
+        <img src="assets/img/fig3.webp" width="997" height="475" loading="lazy" alt="One example component from participant 1, shown as three bar and line plots of loadings over ROI index, frequency and time.">
+        <figcaption><b>Anatomy of a component.</b> One NN-CPD component from participant 1: its spatial, spectral and temporal loadings jointly define a single rank-one pattern in the ERD tensor.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="wrap" id="method">
+    <h2>Method</h2>
+    <p class="lead">Five steps, matching panels A–E of the pipeline figure. The full rationale for every choice is in
+      <a href="https://github.com/hug0-w/OPM-MEG-cp-pipeline/blob/main/docs/pipeline.md">docs/pipeline.md</a>.</p>
+
+    <ol class="steps">
+      <li class="step">
+        <div class="step-head"><span class="step-tag">A</span><h3>Record and source-reconstruct</h3></div>
+        <div class="split split-photo">
+          <div>
+            <p>
+              Each participant wore a helmet 3D-printed from their own MRI, holding 23–25 triaxial and 28–34 dual-axis QuSpin
+              sensors for whole-head coverage. Recordings were made during the visuomotor part of a reward-learning task and
+              epoched around each choice button press.
+            </p>
+            <p>
+              After filtering and Adaptive Multipole Modelling to suppress environmental noise, an LCMV beamformer projected
+              the sensor data onto a 5&nbsp;mm grid, warped to MNI space and summarised in 70 cortical AAL2 regions.
+              Because every participant lands in the same atlas, different sensor layouts stop mattering.
+            </p>
+          </div>
+          <figure class="fig photo">
+            <img src="assets/img/helmet.webp" width="900" height="900" loading="lazy" alt="A 3D-printed OPM helmet on a white mannequin head, densely populated with black sensors and cables.">
+            <figcaption>A 3D-printed OP-MEG helmet with sensors fitted.</figcaption>
+          </figure>
+        </div>
+        <figure class="fig zoomable">
+          <img src="assets/img/fig2.webp" width="984" height="317" loading="lazy" alt="Three head renders, one per participant, each showing the cortex and the positions of OP-MEG sensors around the scalp.">
+          <figcaption><b>Sensor layouts</b> for participants 1–3. Each individually designed helmet gives whole-head coverage.</figcaption>
+        </figure>
+      </li>
+
+      <li class="step">
+        <div class="step-head"><span class="step-tag">B</span><h3>Build a region × frequency × time tensor</h3></div>
+        <p>
+          Wavelet convolution gives power in 1&nbsp;Hz bins from 4–70&nbsp;Hz every 10&nbsp;ms. Trials are trimmed to
+          −200 to +1000&nbsp;ms, log-baselined and averaged into the induced response, giving one third-order tensor per
+          participant. Each tensor is then split into its power increases (<span class="ers">ERS</span>) and decreases
+          (<span class="erd">ERD</span>), so both can be modelled with non-negative factors that never cancel each other out:
+        </p>
+        <div class="eq">$$\mathcal{X}_{\text{ERS}} = \max(\mathcal{X}, 0), \qquad \mathcal{X}_{\text{ERD}} = \lvert \min(\mathcal{X}, 0) \rvert$$</div>
+      </li>
+
+      <li class="step">
+        <div class="step-head"><span class="step-tag">C</span><h3>Decompose with non-negative CPD</h3></div>
+        <p>
+          Each ERD and ERS tensor is fitted independently per participant by alternating least squares with non-negativity
+          on every mode, $\mathcal{X} \approx [\![\mathbf{A}, \mathbf{B}, \mathbf{C}]\!]$. The rank was fixed at
+          $R = 3$: the highest rank that stayed stable across 30 random restarts in every participant, near the elbow of
+          variance explained. Decomposing participants separately, instead of stacking them, means a pattern does not have to
+          exist in everyone.
+        </p>
+      </li>
+
+      <li class="step">
+        <div class="step-head"><span class="step-tag">D</span><h3>Test against a permutation null</h3></div>
+        <p>
+          To check that a tensor really holds task-locked low-rank structure, each trial is circularly shifted in time at
+          random (500 times), which breaks alignment to the button press but keeps spectral and spatial covariance. The
+          shifted trials are re-averaged and decomposed at the same rank. The observed $R^2$ is compared with this null.
+        </p>
+      </li>
+
+      <li class="step">
+        <div class="step-head"><span class="step-tag">E</span><h3>Match components across participants</h3></div>
+        <p>
+          CPD components come out in arbitrary order, so they have to be aligned before they can be compared. Similarity
+          between two components is the product of their per-mode similarities, so a match must agree in space, frequency
+          <em>and</em> time:
+        </p>
+        <div class="eq">$$S_{\text{Network}} = S_{\text{ROI}} \odot S_{\text{Frequency}} \odot S_{\text{Time}}$$</div>
+        <p>
+          $S_{\text{ROI}}$ and $S_{\text{Frequency}}$ are cosine similarities. $S_{\text{Time}}$ is the peak normalised
+          cross-correlation within ±100&nbsp;ms, which tolerates latency differences between people. Clusters come from an exact
+          integer program (threshold 0.6, at most one component per participant per cluster), and their stability is
+          measured by re-solving under 500 small perturbations.
+        </p>
+      </li>
+    </ol>
+
+    <details class="more">
+      <summary>Statistical details: null distributions and rank selection</summary>
+      <figure class="fig zoomable">
+        <img src="assets/img/figA1.webp" width="1032" height="448" loading="lazy" alt="Histograms of null R squared values for each participant, for ERS and ERD, with the observed R squared marked as vertical dashed lines to the right of the null.">
+        <figcaption><b>Permutation null.</b> Observed variance explained (dashed lines) against the null distribution from circularly shifted trials.</figcaption>
+      </figure>
+      <figure class="fig zoomable">
+        <img src="assets/img/figA2.webp" width="1553" height="646" loading="lazy" alt="Two line plots against rank 1 to 14: stability decreasing with rank, and R squared increasing with rank, one line per patient.">
+        <figcaption><b>Rank selection (ERD).</b> Stability across 30 random initialisations and reconstruction performance as a function of rank. $R = 3$ balances variance explained against reproducibility.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <section class="wrap" id="results">
+    <h2>Results</h2>
+
+    <div class="split">
+      <div>
+        <h3 class="sub">Averaging over the cortex blurs the picture</h3>
+        <p>
+          Time–frequency maps averaged over all 70 regions show beta ERD and later ERS in every participant, but alpha ERD
+          is hard to see in participant 1. Averaging throws away <em>where</em> things happen. The decomposition keeps spatial
+          specificity alongside spectral and temporal precision, and recovers the alpha response anyway.
+        </p>
+      </div>
+      <figure class="fig zoomable">
+        <img src="assets/img/fig4.webp" width="991" height="400" loading="lazy" alt="Three time-frequency maps, one per participant, from 4 to 70 Hz and minus 200 to 1000 ms, with blue beta decreases near the button press and red increases later.">
+        <figcaption><b>Whole-cortex time–frequency maps</b> around the button press, averaged across the 70 cortical ROIs.</figcaption>
+      </figure>
+    </div>
+
+    <h3 class="sub">Clusters recovered across participants</h3>
+    <p>Each tab shows a cluster's mean spectral and temporal loadings (range across members shaded) and the top 20% of regions by loading.</p>
+
+    <div class="tabs" role="tablist" aria-label="Clusters">
+      <button role="tab" id="tab-alpha" aria-controls="panel-alpha" aria-selected="true" class="erd">Occipital alpha ERD</button>
+      <button role="tab" id="tab-beta-erd" aria-controls="panel-beta-erd" aria-selected="false" tabindex="-1" class="erd">Motor beta ERD</button>
+      <button role="tab" id="tab-beta-ers" aria-controls="panel-beta-ers" aria-selected="false" tabindex="-1" class="ers">Post-movement beta ERS</button>
+      <button role="tab" id="tab-gamma" aria-controls="panel-gamma" aria-selected="false" tabindex="-1" class="ers">Gamma ERS <span class="tag">exploratory</span></button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-alpha" aria-labelledby="tab-alpha">
+      <figure class="fig zoomable">
+        <img src="assets/img/fig5.webp" width="963" height="608" loading="lazy" alt="Mean spectral loading peaking near 10 Hz and temporal loading peaking near 0.4 s, in blue, above glass-brain views with occipital regions highlighted.">
+      </figure>
+      <div class="facts">
+        <dl>
+          <div><dt>Participants</dt><dd>1, 2</dd></div>
+          <div><dt>Band</dt><dd>α, 7–13 Hz</dd></div>
+          <div><dt>Peak latency</dt><dd>≈ 300 ms</dd></div>
+          <div><dt>Stability</dt><dd>1.0</dd></div>
+        </dl>
+        <ul>
+          <li>Loaded on visual parcels in both participants. No non-visual region entered the ten highest loadings in either.</li>
+          <li>Participant 2 was roughly symmetric over medial and dorsal occipital cortex. Participant 1 was right-lateralised over ventral and lateral occipital cortex.</li>
+          <li>Loading spread over more than ten parcels, as expected for alpha, which is spatially less discrete than beta.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-beta-erd" aria-labelledby="tab-beta-erd" hidden>
+      <figure class="fig zoomable">
+        <img src="assets/img/fig6a.webp" width="1047" height="621" loading="lazy" alt="Mean spectral loading peaking near 18 Hz and broad temporal loading around the button press, in blue, above glass-brain views with sensorimotor regions highlighted.">
+      </figure>
+      <div class="facts">
+        <dl>
+          <div><dt>Participants</dt><dd>1, 2</dd></div>
+          <div><dt>Band</dt><dd>β, 14–30 Hz (peak ≈ 18 Hz)</dd></div>
+          <div><dt>Peak latency</dt><dd>0–250 ms</dd></div>
+          <div><dt>Stability</dt><dd>0.52</dd></div>
+        </dl>
+        <ul>
+          <li>Strongest loadings on postcentral gyrus (0.29 and 0.33), matching reports of movement-related beta ERD in the hand region.</li>
+          <li>The frequency estimate is the spectral loading itself, with no separate band-selection step.</li>
+          <li>Temporal profiles were already suppressed in the baseline window, which overlaps pre-movement desynchronisation, so ERD magnitude and onset are compressed.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-beta-ers" aria-labelledby="tab-beta-ers" hidden>
+      <figure class="fig zoomable">
+        <img src="assets/img/fig6b.webp" width="998" height="621" loading="lazy" alt="Mean spectral loading peaking between 15 and 20 Hz and temporal loading rising after 0.4 s, in red, above glass-brain views with left sensorimotor and frontal regions highlighted.">
+      </figure>
+      <div class="facts">
+        <dl>
+          <div><dt>Participants</dt><dd>1, 2, 3</dd></div>
+          <div><dt>Band</dt><dd>β, 14–30 Hz (peak 15–20 Hz)</dd></div>
+          <div><dt>Peak latency</dt><dd>&gt; 500 ms</dd></div>
+          <div><dt>Stability</dt><dd>0.67, 0.82</dd></div>
+        </dl>
+        <ul>
+          <li>Loaded on left precentral and postcentral gyrus in all three participants, contralateral to the button press.</li>
+          <li>Rose from about 400 ms, consistent with the post-movement beta rebound.</li>
+          <li>Shifted anterior relative to the postcentral-dominant ERD cluster, in the direction reported in cryogenic MEG.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-gamma" aria-labelledby="tab-gamma" hidden>
+      <figure class="fig zoomable">
+        <img src="assets/img/figA3.webp" width="1528" height="962" loading="lazy" alt="Mean spectral loading rising above 30 Hz and a temporal loading that oscillates after 0.2 s, in red, above glass-brain views with frontal and visual regions highlighted.">
+      </figure>
+      <div class="facts">
+        <dl>
+          <div><dt>Participants</dt><dd>2, 3</dd></div>
+          <div><dt>Band</dt><dd>γ, &gt; 30 Hz</dd></div>
+          <div><dt>Timing</dt><dd>≈ 5–10 Hz fluctuations from ≈ 200 ms</dd></div>
+          <div><dt>Stability</dt><dd>0.87</dd></div>
+        </dl>
+        <ul>
+          <li>Spatially inconsistent: visual cortex in participant 2, frontal regions (with added theta power) in participant 3.</li>
+          <li>The periodic gamma envelope is consistent with phase–amplitude coupling, but confirming it would need a direct coupling measure on the source time series.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tables">
+      <div class="table-card">
+        <h3 class="sub">Cluster inventory</h3>
+        <div class="scroll">
+          <table class="inventory">
+            <thead><tr><th>Cluster</th><th>Tensor</th><th>Participants</th><th>Band</th><th>Peak latency</th><th>Dominant regions</th><th>Stability</th></tr></thead>
+            <tbody>
+              <tr><td>Occipital alpha desynchronisation</td><td><span class="pill erd">ERD</span></td><td>1, 2</td><td>α 7–13 Hz</td><td>≈ 300 ms</td><td>Occipital and visual cortex</td><td>1.0</td></tr>
+              <tr><td>Peri-movement beta desynchronisation</td><td><span class="pill erd">ERD</span></td><td>1, 2</td><td>β 14–30 Hz</td><td>0–250 ms</td><td>Sensorimotor</td><td>0.52</td></tr>
+              <tr><td>Late beta synchronisation</td><td><span class="pill ers">ERS</span></td><td>1, 2, 3</td><td>β 14–30 Hz</td><td>&gt; 500 ms</td><td>Frontal and sensorimotor</td><td>0.67, 0.82</td></tr>
+              <tr><td>Broad oscillatory gamma synchronisation</td><td><span class="pill ers">ERS</span></td><td>2, 3</td><td>γ &gt; 30 Hz</td><td>≈ 10 Hz oscillations &gt; 200 ms</td><td>Frontal and visual</td><td>0.87</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-card">
+        <h3 class="sub">Permutation tests</h3>
+        <div class="scroll">
+          <table class="num">
+            <thead><tr><th>Participant</th><th>Tensor</th><th>$R^2$</th><th>$\hat p$</th><th>$\tilde p$ (Bonferroni)</th></tr></thead>
+            <tbody>
+              <tr><td>P1</td><td><span class="pill ers">ERS</span></td><td>0.86</td><td>≤ 0.002</td><td>0.012</td></tr>
+              <tr><td>P1</td><td><span class="pill erd">ERD</span></td><td>0.68</td><td>≤ 0.002</td><td>0.012</td></tr>
+              <tr><td>P2</td><td><span class="pill ers">ERS</span></td><td>0.82</td><td>≤ 0.002</td><td>0.012</td></tr>
+              <tr><td>P2</td><td><span class="pill erd">ERD</span></td><td>0.65</td><td>≤ 0.002</td><td>0.012</td></tr>
+              <tr><td>P3</td><td><span class="pill ers">ERS</span></td><td>0.57</td><td>≤ 0.002</td><td>0.012</td></tr>
+              <tr class="muted"><td>P3</td><td><span class="pill erd">ERD</span></td><td>0.42</td><td>0.034</td><td>0.204</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">P3 ERD did not survive correction (low trial count) and was excluded from clustering.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="code">
+    <h2>Use the code</h2>
+    <p>
+      <code>opm-cp</code> is a small Python package covering tensor construction, non-negative CPD with rank selection,
+      cross-subject similarity and consensus clustering. The worked notebook runs the whole pipeline on simulated data with
+      known ground truth, so it works from a fresh clone. Nothing in it is OPM-specific: any signed region × frequency × time
+      tensor works.
+    </p>
+    <div class="code">
+      <button class="copy" type="button" data-copy="install">Copy</button>
+<pre id="install"><code>git clone https://github.com/hug0-w/OPM-MEG-cp-pipeline.git
+cd OPM-MEG-cp-pipeline
+pip install -e ".[all]"</code></pre>
+    </div>
+    <div class="code">
+      <button class="copy" type="button" data-copy="quickstart">Copy</button>
+<pre id="quickstart"><code>import opm_cp as cp
+from opm_cp import simulate
+
+# Load and prepare (on real data: cp.load_tensor instead of simulate_dataset)
+loaded = simulate.simulate_dataset(subjects=(1, 2, 3))
+ds = cp.build_dataset(loaded, keep_patterns=['precentral', 'occipital'], n_crop=5)
+
+# Decompose each subject independently, ERS and ERD separately
+cp_models, factors = cp.decompose_dataset(ds, rank=3, n_runs=25)
+
+# Match components across subjects and cluster them, once per type
+for kind in ('ERS', 'ERD'):
+    components = cp.build_component_set(factors[kind], subjects=ds.subjects, rank=3)
+    sim = cp.compute_similarity(components, dt_ms=ds.dt_ms, lag_ms=150)
+    M, clusters, stability = cp.consensus_clustering(sim, threshold=0.5)</code></pre>
+    </div>
+    <div class="links">
+      <a href="https://github.com/hug0-w/OPM-MEG-cp-pipeline/blob/main/examples/ers_erd_cross_subject_clustering.ipynb">Worked notebook →</a>
+      <a href="https://github.com/hug0-w/OPM-MEG-cp-pipeline/blob/main/docs/pipeline.md">Method notes →</a>
+      <a href="https://github.com/hug0-w/OPM-MEG-cp-pipeline#readme">README →</a>
+    </div>
+  </section>
+
+  <section class="wrap" id="limitations">
+    <h2>Limitations</h2>
+    <ul class="plain">
+      <li><b>Three participants.</b> This is a feasibility demonstration: each recording is a separate replication of the pipeline, not a sample for group-level inference.</li>
+      <li><b>Fixed modelling choices.</b> Rank was fixed at $R = 3$, tensors are trial-averaged, and the beamformer, regularisation and atlas all shape what is found. There is no simulated ground truth in the paper.</li>
+      <li><b>ERD and ERS are fitted separately.</b> This allows non-negative factors but means coupled patterns, such as beta ERD and its later rebound, appear as separate components.</li>
+    </ul>
+  </section>
+
+  <section class="wrap" id="cite">
+    <h2>Citation</h2>
+    <div class="code">
+      <button class="copy" type="button" data-copy="bibtex">Copy</button>
+<pre id="bibtex"><code>@article{wharton2026tensor,
+  title   = {Tensor decomposition for data-driven analysis of {OP-MEG}: a feasibility study},
+  author  = {Wharton, Hugo and Ramaswamy, Arjun and Mellor, Stephanie and Puvvada, Sahitya and
+             Walker, Matthew and Bush, Daniel and Tierney, Tim and Vivekananda, Umesh and
+             Sadrzadeh, Mehrnoosh},
+  journal = {bioRxiv},
+  year    = {2026},
+  doi     = {10.64898/2026.11.20.766579},
+  note    = {Preprint}
+}</code></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>
+      We are grateful to the participants who took part in this study and to the clinical and technical teams who supported
+      data collection. Supported by the NIHR UCLH Biomedical Research Centre, the Wellcome Trust (307306/Z/23/Z), UKRI
+      Frontier Research (EP/X023060/1) and EPSRC (EP/Z533191/1).
+    </p>
+    <p>
+      The OP-MEG recordings are patient data and cannot be shared publicly; requests should go to the corresponding authors.
+      The paper is available under CC-BY 4.0. Code is MIT-licensed.
+    </p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lightbox-close" type="button" aria-label="Close">×</button>
+  <img alt="">
+</div>
+
+</body>
+</html>
